@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { DlChip, DlIcon, DlSelect, DlTag } from '../delorean'
+import { analyzeSentiment } from '../sentiment'
 import { APP_VERSIONS, PRODUCTS, store } from '../store'
 
 const productFilter = ref('all')
@@ -50,12 +51,31 @@ const dayDist = computed(() => {
   return days.map((d) => ({ ...d, pct: Math.round((d.count / max) * 100) }))
 })
 
-const comments = computed(() => filtered.value.filter((item) => item.comment).slice(0, 8))
+const comments = computed(() =>
+  filtered.value
+    .filter((item) => item.comment)
+    .map((item) => ({
+      ...item,
+      sentiment: item.sentiment || analyzeSentiment(item.comment),
+    })),
+)
 
 function tagVariant(stars) {
   if (stars >= 4) return 'success'
   if (stars === 3) return 'alert'
   return 'error'
+}
+
+function sentimentVariant(label) {
+  if (label === 'positivo') return 'success'
+  if (label === 'negativo') return 'error'
+  return 'alert'
+}
+
+function sentimentText(label) {
+  if (label === 'positivo') return 'Positivo'
+  if (label === 'negativo') return 'Negativo'
+  return 'Neutral'
 }
 
 function formatDate(iso) {
@@ -136,28 +156,54 @@ function formatDate(iso) {
 
     <article class="overflow-hidden rounded-dl24 bg-grey-0">
       <div class="border-b border-grey-200 px-dl24 py-dl16">
-        <p class="dl-title2 text-grey-1000">Comentarios abiertos recientes</p>
+        <p class="dl-title2 text-grey-1000">Comentarios abiertos</p>
       </div>
 
-      <div class="divide-y divide-grey-200">
-        <div v-for="row in comments" :key="row.id" class="px-dl24 py-dl16">
-          <div class="flex flex-wrap items-center gap-dl12">
-            <DlTag :text="`${row.stars} ★`" :variant="tagVariant(row.stars)" />
-            <span class="dl-caption-sb text-grey-800">{{ row.product }}</span>
-            <span class="dl-caption-r text-grey-500">v{{ row.appVersion }} · {{ formatDate(row.createdAt) }}</span>
-          </div>
-
-          <p class="mt-dl12 dl-body-r text-grey-800">{{ row.comment }}</p>
-
-          <div v-if="row.pills.length" class="mt-dl12 flex flex-wrap gap-dl8">
-            <DlChip v-for="pill in row.pills" :key="pill" :text="pill" active />
-          </div>
-        </div>
-
-        <p v-if="!comments.length" class="px-dl24 py-dl32 text-center dl-body-r text-grey-500">
-          No hay comentarios con estos filtros.
-        </p>
+      <div v-if="comments.length" class="overflow-x-auto">
+        <table class="min-w-[960px] w-full text-left">
+          <thead class="bg-grey-100">
+            <tr class="dl-caption-sb text-grey-600">
+              <th class="px-dl16 py-dl12">Fecha</th>
+              <th class="px-dl16 py-dl12">Producto</th>
+              <th class="px-dl16 py-dl12">Estrellas</th>
+              <th class="px-dl16 py-dl12">Píldoras</th>
+              <th class="px-dl16 py-dl12">Comentario</th>
+              <th class="px-dl16 py-dl12">Análisis de sentimiento</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-grey-200">
+            <tr v-for="row in comments" :key="row.id" class="align-top dl-body-r text-grey-800">
+              <td class="whitespace-nowrap px-dl16 py-dl16 dl-caption-r text-grey-600">
+                {{ formatDate(row.createdAt) }}
+              </td>
+              <td class="px-dl16 py-dl16">
+                <p class="dl-caption-sb text-grey-800">{{ row.product }}</p>
+                <p class="mt-dl4 dl-caption-r text-grey-500">v{{ row.appVersion }}</p>
+              </td>
+              <td class="px-dl16 py-dl16">
+                <DlTag :text="`${row.stars} ★`" :variant="tagVariant(row.stars)" />
+              </td>
+              <td class="px-dl16 py-dl16">
+                <div v-if="row.pills.length" class="flex flex-wrap gap-dl8">
+                  <DlChip v-for="pill in row.pills" :key="pill" :text="pill" active />
+                </div>
+                <span v-else class="dl-caption-r text-grey-400">—</span>
+              </td>
+              <td class="max-w-[320px] px-dl16 py-dl16 dl-body-r text-grey-800">{{ row.comment }}</td>
+              <td class="px-dl16 py-dl16">
+                <DlTag
+                  :text="sentimentText(row.sentiment.label)"
+                  :variant="sentimentVariant(row.sentiment.label)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+
+      <p v-else class="px-dl24 py-dl32 text-center dl-body-r text-grey-500">
+        No hay comentarios con estos filtros.
+      </p>
     </article>
   </section>
 </template>

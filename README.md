@@ -8,10 +8,33 @@ MVP interactivo de un sistema parametrizable de calificación de servicio, const
 
 ```bash
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-Abre http://localhost:5173
+`npm run dev` levanta Vite (http://localhost:5173) y la API (http://localhost:8787) juntos. En dos terminales: `npm run dev:web` y `npm run dev:api`.
+
+Sin DynamoDB, la API usa un store en memoria y lo deja claro en logs. El UI sigue funcionando con `localStorage` (`feedback-bottomsheet-mvp-v2`) si la API no responde.
+
+### API + DynamoDB (hackathon)
+
+Dos tablas en `us-east-1` (credenciales locales de AWS):
+
+| Tabla | PK | Contenido |
+|-------|----|-----------|
+| `mvp-hackaton` | `survey_id` | Formularios (`id` = `survey_id`) |
+| `mvp-hackaton-responses` | `response_id` | Respuestas (`id` = `response_id`, `formId`, `stars`, `pills`, `comment`, `sentiment`, …) |
+
+```bash
+cp .env.example .env
+npm run db:create   # verifica que las tablas existan
+npm run db:seed     # carga los 2 formularios y 9 respuestas demo
+npm run dev
+```
+
+Rutas: `GET /health`, `GET|POST /v1/forms`, `PUT /v1/forms/:id`, `GET|POST /v1/responses`. Vite proxea `/v1` y `/health` a `:8787`.
+
+**IAM:** least privilege `dynamodb:PutItem`, `GetItem`, `Scan`, `UpdateItem` solo sobre esas dos tablas. No reutilizar roles compartidos de plataforma.
 
 ## Vistas
 
@@ -19,7 +42,7 @@ Abre http://localhost:5173
 2. **Simulador App** — permite seleccionar un formulario y ejecutar su evento respetando la frecuencia configurada. El bottomsheet avanza progresivamente: estrellas → píldoras → texto libre → agradecimiento.
 3. **Dashboard** — filtros por producto y versión de app, promedio, total, distribución por estrellas, actividad de 7 días y comentarios recientes.
 
-El estado vive en un store reactivo (`src/store.js`) y se persiste en `localStorage` bajo la clave `feedback-bottomsheet-mvp`. El store migra automáticamente la configuración única de versiones anteriores al nuevo catálogo de formularios.
+El estado vive en un store reactivo (`src/store.js`). Al arrancar hidrata desde `GET /v1/forms` y `GET /v1/responses` si la API tiene datos; `saveForm` / `addResponse` también persisten en la API (best-effort). `localStorage` (`feedback-bottomsheet-mvp-v2`) queda como caché y fallback.
 
 ## Design System
 

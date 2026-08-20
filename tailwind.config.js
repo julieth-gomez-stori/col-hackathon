@@ -47,6 +47,7 @@ export default {
         dl8: '8px',
         dl12: '12px',
         dl16: '16px',
+        dl20: '20px',
         dl24: '24px',
         dl32: '32px',
         dl40: '40px',

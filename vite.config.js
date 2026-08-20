@@ -7,5 +7,9 @@ export default defineConfig({
     port: 5173,
     // fsevents no reporta de forma fiable las escrituras en este entorno.
     watch: { usePolling: true, interval: 300 },
+    proxy: {
+      '/v1': 'http://localhost:8787',
+      '/health': 'http://localhost:8787',
+    },
   },
 })

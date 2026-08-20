@@ -3,7 +3,8 @@ defineProps({
   name: {
     type: String,
     required: true,
-    validator: (value) => ['favorite', 'close-bold', 'check', 'chevron'].includes(value),
+    validator: (value) =>
+      ['favorite', 'favorite-filled', 'close-bold', 'check', 'chevron'].includes(value),
   },
 })
 </script>
@@ -16,6 +17,11 @@ defineProps({
       fill-rule="evenodd"
       clip-rule="evenodd"
       d="M12.487 3.557v.002l1.866 5.913h5.998c.498 0 .687.62.314.912l-4.85 3.75 1.808 6.006c.156.502-.425.834-.794.558l-.002-.002L12 17.006l-4.821 3.686c-.401.316-.944-.087-.803-.55l.001-.004 1.808-6.004-4.848-3.75h-.001c-.389-.304-.164-.912.314-.912h3.366v.984H5.038l4.284 3.314-1.581 5.252 4.258-3.255 4.259 3.255-1.582-5.252 4.286-3.314h-5.33L12 5.286l-1.632 5.17H8v-.984h1.647l1.866-5.913v-.002a.51.51 0 0 1 .974 0"
+    />
+    <path
+      v-else-if="name === 'favorite-filled'"
+      fill="currentColor"
+      d="M11.513 3.559a.51.51 0 0 1 .974 0l1.866 5.913h5.998c.498 0 .687.62.314.912l-4.85 3.75 1.808 6.006c.156.502-.425.834-.794.558L12 17.006l-4.821 3.686c-.401.316-.944-.087-.803-.55l1.809-6.008-4.848-3.75c-.389-.304-.164-.912.314-.912h5.996z"
     />
     <path
       v-else-if="name === 'close-bold'"

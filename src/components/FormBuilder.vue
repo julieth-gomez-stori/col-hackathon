@@ -1,11 +1,21 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { DlButton, DlChip, DlSelect, DlTextArea, DlTextInput, DlTag } from '../delorean'
-import { FREQUENCIES, PRODUCTS, defaultConfig, saveForm, store } from '../store'
+import {
+  FREQUENCY_MODES,
+  FREQUENCY_UNITS,
+  PRODUCTS,
+  defaultConfig,
+  frequencyLabel,
+  normalizeFrequency,
+  saveForm,
+  store,
+} from '../store'
 import PhonePreview from './PhonePreview.vue'
 
 const productOptions = PRODUCTS.map((product) => ({ value: product, label: product }))
-const frequencyOptions = FREQUENCIES.map(({ value, label }) => ({ value, label }))
+const frequencyModeOptions = FREQUENCY_MODES.map(({ value, label }) => ({ value, label }))
+const frequencyUnitOptions = FREQUENCY_UNITS.map(({ value, label }) => ({ value, label }))
 
 const editorOpen = ref(false)
 const newPill = ref('')
@@ -17,8 +27,17 @@ function createDraft(form = {}) {
     ...defaultConfig,
     ...form,
     id: form.id || '',
+    frequency: normalizeFrequency(form.frequency ?? defaultConfig.frequency),
     pills: [...(form.pills || defaultConfig.pills)],
   }
+}
+
+const frequencyCountLabel = computed(() =>
+  draft.frequency.mode === 'times' ? 'Número de ejecuciones' : 'Cada cuántos',
+)
+
+function setFrequencyCount(raw) {
+  draft.frequency.value = Math.max(1, Number(raw) || 1)
 }
 
 function setDraft(form = {}) {
@@ -32,6 +51,8 @@ const canSave = computed(
     draft.ratingName.trim() &&
     draft.description.trim() &&
     draft.eventName.trim() &&
+    draft.owner.trim() &&
+    draft.formVersion.trim() &&
     draft.welcomeTitle.trim() &&
     draft.q1Label.trim(),
 )
@@ -57,10 +78,6 @@ function persist() {
     editorOpen.value = false
   }, 1200)
 }
-
-function frequencyLabel(value) {
-  return FREQUENCIES.find((item) => item.value === value)?.label || value
-}
 </script>
 
 <template>
@@ -78,12 +95,14 @@ function frequencyLabel(value) {
       </div>
 
       <div class="mt-dl24 overflow-x-auto rounded-dl16 border border-grey-200">
-        <table class="min-w-[820px] w-full text-left">
+        <table class="min-w-[1040px] w-full text-left">
           <thead class="bg-grey-100">
             <tr class="dl-caption-sb text-grey-600">
               <th class="px-dl16 py-dl12">Calificación</th>
               <th class="px-dl16 py-dl12">Evento</th>
               <th class="px-dl16 py-dl12">Producto</th>
+              <th class="px-dl16 py-dl12">Owner</th>
+              <th class="px-dl16 py-dl12">Versión</th>
               <th class="px-dl16 py-dl12">Frecuencia</th>
               <th class="px-dl16 py-dl12 text-right">Acción</th>
             </tr>
@@ -100,6 +119,12 @@ function frequencyLabel(value) {
                 </code>
               </td>
               <td class="px-dl16 py-dl16"><DlTag :text="form.product" /></td>
+              <td class="px-dl16 py-dl16 dl-caption-r text-grey-700">{{ form.owner }}</td>
+              <td class="px-dl16 py-dl16">
+                <span class="rounded-dl8 bg-grey-100 px-dl8 py-dl4 dl-caption-sb text-grey-700">
+                  v{{ form.formVersion }}
+                </span>
+              </td>
               <td class="max-w-[210px] px-dl16 py-dl16 dl-caption-r text-grey-700">
                 {{ frequencyLabel(form.frequency) }}
               </td>
@@ -138,8 +163,34 @@ function frequencyLabel(value) {
           />
 
           <div class="grid gap-dl16 sm:grid-cols-2">
+            <DlTextInput v-model="draft.owner" label="Owner del formulario" placeholder="Nombre o equipo" />
+            <DlTextInput v-model="draft.formVersion" label="Versión del formulario" placeholder="1.0.0" />
+          </div>
+
+          <div class="grid gap-dl16 sm:grid-cols-2">
             <DlSelect v-model="draft.product" label="Producto" :options="productOptions" />
-            <DlSelect v-model="draft.frequency" label="Frecuencia de apertura" :options="frequencyOptions" />
+            <DlSelect v-model="draft.frequency.mode" label="Frecuencia de apertura" :options="frequencyModeOptions" />
+          </div>
+
+          <div v-if="draft.frequency.mode !== 'always'" class="rounded-dl16 bg-grey-100 p-dl16">
+            <p class="dl-caption-sb text-primary-800">Detalle de la frecuencia</p>
+            <div class="mt-dl12 grid gap-dl16 sm:grid-cols-2">
+              <DlTextInput
+                :model-value="String(draft.frequency.value)"
+                :label="frequencyCountLabel"
+                type="number"
+                min="1"
+                placeholder="3"
+                @update:model-value="setFrequencyCount"
+              />
+              <DlSelect
+                v-if="draft.frequency.mode === 'time'"
+                v-model="draft.frequency.unit"
+                label="Unidad de tiempo"
+                :options="frequencyUnitOptions"
+              />
+            </div>
+            <p class="mt-dl12 dl-caption-r text-grey-600">{{ frequencyLabel(draft.frequency) }}</p>
           </div>
 
           <div class="border-t border-grey-200 pt-dl24">

@@ -1,158 +1,28 @@
 import { reactive, watch } from 'vue'
+import { createResponse, fetchForms, fetchResponses, upsertForm } from './api'
+import { FREQUENCY_MODES, FREQUENCY_UNITS, frequencyLabel, normalizeFrequency } from './frequency'
+import { defaultConfig, seedForms, seedResponses } from './seed'
+import { analyzeSentiment } from './sentiment'
 
 export const PRODUCTS = ['Credit', 'Secure Card', 'Luna', 'Clip', 'Tap2Pay', 'Deposits']
 export const APP_VERSIONS = ['3.10.0', '3.11.0', '3.12.0']
-export const FREQUENCIES = [
-  { value: 'always', label: 'Cada vez que se ejecuta el evento' },
-  { value: 'every_3', label: 'Cada 3 veces que se ejecuta el evento' },
-  { value: 'monthly', label: 'Una vez al mes' },
-]
 
-/* v2: catálogo de formularios y nueva lista de productos. */
-const STORAGE_KEY = 'feedback-bottomsheet-mvp-v2'
+export { FREQUENCY_MODES, FREQUENCY_UNITS, frequencyLabel, normalizeFrequency }
 
-export const defaultConfig = {
-  id: 'form-payment-success',
-  ratingName: 'Pago Exitoso',
-  description: 'Evalúa la experiencia del usuario después de completar un pago.',
-  eventName: 'payment_success',
-  product: 'Credit',
-  frequency: 'always',
-  welcomeTitle: 'Tu opinión nos ayuda a mejorar',
-  q1Label: '¿Cómo calificas tu experiencia?',
-  q2Label: '¿Qué podríamos mejorar?',
-  pills: ['Rapidez', 'Claridad', 'Soporte', 'Comisiones', 'App'],
-  q3Label: 'Cuéntanos más detalles...',
-  appVersion: '3.12.0',
-}
+/* v3: owner, versión del formulario y frecuencia configurable (modo + número). */
+const STORAGE_KEY = 'feedback-bottomsheet-mvp-v3'
 
-const secondConfig = {
-  ...defaultConfig,
-  id: 'form-card-activation',
-  ratingName: 'Activación de tarjeta',
-  description: 'Mide la experiencia al activar una tarjeta segura.',
-  eventName: 'card_activation_success',
-  product: 'Secure Card',
-  frequency: 'every_3',
-  pills: ['Rapidez', 'Claridad', 'Seguridad', 'App'],
-}
+export { defaultConfig }
 
-function daysAgo(n, hour = 12) {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  d.setHours(hour, 10 + n, 0, 0)
-  return d.toISOString()
-}
-
-function seedResponses() {
-  return [
-    {
-      id: 'r1',
-      createdAt: daysAgo(0, 9),
-      formId: 'form-payment-success',
-      product: 'Credit',
-      appVersion: '3.12.0',
-      eventName: 'payment_success',
-      stars: 5,
-      pills: ['Rapidez'],
-      comment: 'El pago se reflejó al instante. Excelente.',
-    },
-    {
-      id: 'r2',
-      createdAt: daysAgo(0, 14),
-      formId: 'form-payment-success',
-      product: 'Credit',
-      appVersion: '3.12.0',
-      eventName: 'payment_success',
-      stars: 4,
-      pills: ['Claridad', 'App'],
-      comment: 'Todo bien, el comprobante podría ser más claro.',
-    },
-    {
-      id: 'r3',
-      createdAt: daysAgo(1, 11),
-      formId: 'form-card-activation',
-      product: 'Secure Card',
-      appVersion: '3.11.0',
-      eventName: 'card_activation_success',
-      stars: 3,
-      pills: ['Comisiones', 'Claridad'],
-      comment: 'No entendí del todo las comisiones aplicadas.',
-    },
-    {
-      id: 'r4',
-      createdAt: daysAgo(1, 18),
-      formId: 'form-payment-success',
-      product: 'Tap2Pay',
-      appVersion: '3.12.0',
-      eventName: 'payment_success',
-      stars: 5,
-      pills: ['Rapidez', 'App'],
-      comment: '',
-    },
-    {
-      id: 'r5',
-      createdAt: daysAgo(2, 10),
-      formId: 'form-payment-success',
-      product: 'Credit',
-      appVersion: '3.10.0',
-      eventName: 'payment_success',
-      stars: 2,
-      pills: ['Soporte'],
-      comment: 'Tuve que reintentar dos veces el envío.',
-    },
-    {
-      id: 'r6',
-      createdAt: daysAgo(3, 16),
-      formId: 'form-card-activation',
-      product: 'Secure Card',
-      appVersion: '3.12.0',
-      eventName: 'card_activation_success',
-      stars: 4,
-      pills: ['App'],
-      comment: 'Flujo rápido, me gustaría ver más detalle del rendimiento.',
-    },
-    {
-      id: 'r7',
-      createdAt: daysAgo(4, 8),
-      formId: 'form-payment-success',
-      product: 'Deposits',
-      appVersion: '3.11.0',
-      eventName: 'payment_success',
-      stars: 1,
-      pills: ['Soporte', 'Claridad'],
-      comment: 'El mensaje de error no me dijo qué falló.',
-    },
-    {
-      id: 'r8',
-      createdAt: daysAgo(5, 13),
-      formId: 'form-payment-success',
-      product: 'Credit',
-      appVersion: '3.12.0',
-      eventName: 'payment_success',
-      stars: 5,
-      pills: ['Rapidez'],
-      comment: 'Súper sencillo.',
-    },
-    {
-      id: 'r9',
-      createdAt: daysAgo(6, 19),
-      formId: 'form-card-activation',
-      product: 'Luna',
-      appVersion: '3.10.0',
-      eventName: 'card_activation_success',
-      stars: 4,
-      pills: ['Claridad'],
-      comment: 'Buena confirmación al finalizar.',
-    },
-  ]
-}
-
-function seedForms() {
-  return [
-    { ...defaultConfig, pills: [...defaultConfig.pills] },
-    { ...secondConfig, pills: [...secondConfig.pills] },
-  ]
+function normalizeForm(form = {}) {
+  return {
+    ...defaultConfig,
+    ...form,
+    owner: form.owner || defaultConfig.owner,
+    formVersion: form.formVersion || defaultConfig.formVersion,
+    frequency: normalizeFrequency(form.frequency),
+    pills: form.pills?.length ? [...form.pills] : [...defaultConfig.pills],
+  }
 }
 
 function loadState() {
@@ -164,11 +34,7 @@ function loadState() {
     const forms = Array.isArray(parsed.forms) && parsed.forms.length ? parsed.forms : seedForms()
 
     return {
-      forms: forms.map((form) => ({
-        ...defaultConfig,
-        ...form,
-        pills: form.pills?.length ? form.pills : [...defaultConfig.pills],
-      })),
+      forms: forms.map(normalizeForm),
       responses: Array.isArray(parsed.responses) ? parsed.responses : seedResponses(),
     }
   } catch {
@@ -197,27 +63,49 @@ watch(
   { deep: true },
 )
 
+function persistBestEffort(label, task) {
+  task().catch((err) => {
+    console.warn(`[api] ${label} failed, keeping local cache`, err)
+  })
+}
+
+export async function hydrateFromApi() {
+  try {
+    const [forms, responses] = await Promise.all([fetchForms(), fetchResponses()])
+    if (forms.length) store.forms.splice(0, store.forms.length, ...forms.map(normalizeForm))
+    if (responses.length) store.responses.splice(0, store.responses.length, ...responses)
+  } catch (err) {
+    console.warn('[api] hydrate skipped, using localStorage cache', err)
+  }
+}
+
 export function saveForm(next) {
   const form = {
-    ...defaultConfig,
-    ...next,
+    ...normalizeForm(next),
     id: next.id || `form-${Date.now()}`,
-    pills: [...next.pills],
   }
   const index = store.forms.findIndex((item) => item.id === form.id)
   if (index >= 0) Object.assign(store.forms[index], form)
   else store.forms.unshift(form)
+  persistBestEffort('saveForm', () => upsertForm(form))
   return form
 }
 
 export function addResponse(form, payload) {
-  store.responses.unshift({
+  const comment = payload.comment || ''
+  const response = {
     id: `r-${Date.now()}`,
     createdAt: new Date().toISOString(),
     formId: form.id,
     product: form.product,
     appVersion: form.appVersion,
     eventName: form.eventName,
+    formVersion: form.formVersion,
+    owner: form.owner,
     ...payload,
-  })
+    sentiment: comment.trim() ? analyzeSentiment(comment) : null,
+  }
+  store.responses.unshift(response)
+  persistBestEffort('addResponse', () => createResponse(response))
+  return response
 }

@@ -55,7 +55,7 @@ function selectStar(star) {
         @mouseenter="hovered = star"
         @mouseleave="hovered = 0"
       >
-        <DlIcon name="favorite" />
+        <DlIcon :name="star <= (hovered || modelValue) ? 'favorite-filled' : 'favorite'" />
       </button>
     </div>
 
@@ -109,8 +109,8 @@ function selectStar(star) {
   height: 32px;
 }
 .SheetGrade__star--selected {
-  color: #8a6c00;
-  transform: scale(1.06);
+  color: #f5b800;
+  transform: scale(1.08);
 }
 .SheetGrade__rateLabels {
   display: flex;

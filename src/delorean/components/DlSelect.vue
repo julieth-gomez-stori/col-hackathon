@@ -14,7 +14,9 @@ const emit = defineEmits(['update:modelValue'])
 const open = ref(false)
 const root = ref(null)
 
-const selected = computed(() => props.options.find((option) => option.value === props.modelValue))
+const selected = computed(() =>
+  props.options.find((option) => String(option.value) === String(props.modelValue)),
+)
 
 function pick(option) {
   emit('update:modelValue', option.value)
@@ -32,10 +34,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
 <template>
   <div ref="root" class="Select">
     <button type="button" class="Select__input" @click="open = !open">
-      <span v-if="!selected" class="Select__input__placeholder">{{ placeholder }}</span>
-      <span v-else class="Select__selectedOption">
+      <span class="Select__selectedOption">
         <p v-if="label">{{ label }}</p>
-        <span>{{ selected.label }}</span>
+        <span v-if="selected">{{ selected.label }}</span>
+        <span v-else class="Select__input__placeholder">{{ placeholder }}</span>
       </span>
       <DlIcon name="chevron" :class="open ? 'Select__chevron--open' : 'Select__chevron--close'" />
     </button>
@@ -43,7 +45,12 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
     <div v-if="open" class="Select__menuDropdown">
       <ul>
         <li v-for="option in options" :key="option.value">
-          <button type="button" class="Select__menuDropdown__item dl-body-r" @click="pick(option)">
+          <button
+            type="button"
+            class="Select__menuDropdown__item dl-body-r"
+            :class="{ 'Select__menuDropdown__item--selected': selected && selected.value === option.value }"
+            @click="pick(option)"
+          >
             {{ option.label }}
           </button>
         </li>
@@ -58,6 +65,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
 }
 .Select__input {
   font: 400 0.875rem/1.125rem Inter, sans-serif;
+  color: #161616;
+  text-align: left;
   border: 1px solid #a8a8a8;
   border-radius: 12px;
   width: 100%;
@@ -95,9 +104,22 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
   color: var(--delorean-style-color-primary800);
   margin: 0;
 }
+.Select__selectedOption {
+  min-width: 0;
+  flex: 1;
+}
 .Select__selectedOption > span {
   font: 400 0.875rem/1.125rem Inter, sans-serif;
   color: #161616;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.Select__selectedOption > .Select__input__placeholder {
+  font: 700 0.875rem/1.125rem Inter, sans-serif;
+  color: #6f6f6f;
 }
 .Select__menuDropdown {
   width: 100%;
@@ -124,6 +146,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
   cursor: pointer;
   border-radius: 8px;
   text-align: left;
+  color: #161616;
+}
+.Select__menuDropdown__item--selected {
+  background: var(--delorean-style-color-primary100);
+  font-weight: 600;
 }
 .Select__menuDropdown__item:hover {
   background: var(--delorean-style-color-primary100);

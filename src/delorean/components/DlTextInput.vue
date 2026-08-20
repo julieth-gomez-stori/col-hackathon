@@ -6,6 +6,9 @@ const props = defineProps({
   label: { type: String, default: '' },
   placeholder: { type: String, default: '' },
   helpText: { type: String, default: '' },
+  type: { type: String, default: 'text' },
+  min: { type: [String, Number], default: undefined },
+  max: { type: [String, Number], default: undefined },
   state: {
     type: String,
     default: 'default',
@@ -32,6 +35,9 @@ const classes = computed(() => [
       <label v-if="label">{{ label }}</label>
       <input
         class="TextInput dl-body-r"
+        :type="type"
+        :min="min"
+        :max="max"
         :value="modelValue"
         :placeholder="placeholder"
         :disabled="state === 'disabled'"
