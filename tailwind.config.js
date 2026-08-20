@@ -1,0 +1,63 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{vue,js}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          1000: 'var(--delorean-style-color-primary1000)',
+          900: 'var(--delorean-style-color-primary900)',
+          800: 'var(--delorean-style-color-primary800)',
+          700: 'var(--delorean-style-color-primary700)',
+          600: 'var(--delorean-style-color-primary600)',
+          500: 'var(--delorean-style-color-primary500)',
+          400: 'var(--delorean-style-color-primary400)',
+          300: 'var(--delorean-style-color-primary300)',
+          200: 'var(--delorean-style-color-primary200)',
+          100: 'var(--delorean-style-color-primary100)',
+        },
+        grey: {
+          1000: '#161616',
+          900: '#262626',
+          800: '#393939',
+          700: '#525252',
+          600: '#6f6f6f',
+          500: '#8d8d8d',
+          400: '#a8a8a8',
+          300: '#c6c6c6',
+          200: '#e0e0e0',
+          100: '#f4f4f4',
+          0: '#ffffff',
+        },
+        success: { dark: '#058e65', DEFAULT: '#00d180', light: '#b3f2d9' },
+        error: { dark: '#b90000', DEFAULT: '#ff6666', light: '#ffe0e0' },
+        alert: { dark: '#8a6c00', DEFAULT: '#f4b843', light: '#fff3d9' },
+        info: { dark: '#0064a5', DEFAULT: '#6bcaff', light: '#f4fbff' },
+      },
+      borderRadius: {
+        dl4: '4px',
+        dl8: '8px',
+        dl12: '12px',
+        dl16: '16px',
+        dl24: '24px',
+        full: '100px',
+      },
+      spacing: {
+        dl4: '4px',
+        dl8: '8px',
+        dl12: '12px',
+        dl16: '16px',
+        dl24: '24px',
+        dl32: '32px',
+        dl40: '40px',
+        dl48: '48px',
+        dl56: '56px',
+        dl64: '64px',
+      },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}

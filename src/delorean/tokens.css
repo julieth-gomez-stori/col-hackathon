@@ -1,0 +1,150 @@
+/*
+ * Tokens extraídos del build público del Design System (storybook.storicarddev.com).
+ * Espejo local de @credifranco/design-system-vue/style.css mientras no haya
+ * acceso al registry privado @credifranco en npm.pkg.github.com.
+ */
+
+:root {
+  --delorean-style-color-primary1000: #003a40;
+  --delorean-style-color-primary900: #336166;
+  --delorean-style-color-primary800: #058e65;
+  --delorean-style-color-primary700: #00d180;
+  --delorean-style-color-primary600: #33da99;
+  --delorean-style-color-primary500: #66e3b3;
+  --delorean-style-color-primary400: #99edcc;
+  --delorean-style-color-primary300: #b3f2d9;
+  --delorean-style-color-primary200: #e5faf2;
+  --delorean-style-color-primary100: #f0fcf7;
+
+  --delorean-style-color-grey1000: #161616;
+  --delorean-style-color-grey900: #262626;
+  --delorean-style-color-grey800: #393939;
+  --delorean-style-color-grey700: #525252;
+  --delorean-style-color-grey600: #6f6f6f;
+  --delorean-style-color-grey500: #8d8d8d;
+  --delorean-style-color-grey400: #a8a8a8;
+  --delorean-style-color-grey300: #c6c6c6;
+  --delorean-style-color-grey200: #e0e0e0;
+  --delorean-style-color-grey100: #f4f4f4;
+  --delorean-style-color-grey0: #ffffff;
+
+  --delorean-style-color-successDark: #058e65;
+  --delorean-style-color-successDefault: #00d180;
+  --delorean-style-color-successLight: #b3f2d9;
+  --delorean-style-color-errorDark: #b90000;
+  --delorean-style-color-errorDefault: #ff6666;
+  --delorean-style-color-errorLight: #ffe0e0;
+  --delorean-style-color-alertDark: #8a6c00;
+  --delorean-style-color-alertDefault: #f4b843;
+  --delorean-style-color-alertLight: #fff3d9;
+  --delorean-style-color-infoDark: #0064a5;
+  --delorean-style-color-infoDefault: #6bcaff;
+  --delorean-style-color-infoLight: #f4fbff;
+
+  --delorean-style-radius-radius0: 0px;
+  --delorean-style-radius-radius4: 4px;
+  --delorean-style-radius-radius8: 8px;
+  --delorean-style-radius-radius12: 12px;
+  --delorean-style-radius-radius16: 16px;
+  --delorean-style-radius-radius24: 24px;
+  --delorean-style-radius-radiusFull: 100px;
+
+  --delorean-style-spacing-spacing0: 0px;
+  --delorean-style-spacing-spacing4: 4px;
+  --delorean-style-spacing-spacing8: 8px;
+  --delorean-style-spacing-spacing12: 12px;
+  --delorean-style-spacing-spacing16: 16px;
+  --delorean-style-spacing-spacing24: 24px;
+  --delorean-style-spacing-spacing32: 32px;
+  --delorean-style-spacing-spacing40: 40px;
+  --delorean-style-spacing-spacing48: 48px;
+  --delorean-style-spacing-spacing56: 56px;
+  --delorean-style-spacing-spacing64: 64px;
+  --delorean-style-spacing-spacing72: 72px;
+  --delorean-style-spacing-spacing80: 80px;
+  --delorean-style-spacing-spacing96: 96px;
+  --delorean-style-spacing-spacing120: 120px;
+  --delorean-style-spacing-spacing160: 160px;
+}
+
+:root:has(.credit-theme) {
+  --delorean-style-color-primary1000: #003a40;
+  --delorean-style-color-primary900: #336166;
+  --delorean-style-color-primary800: #058e65;
+  --delorean-style-color-primary700: #00d180;
+  --delorean-style-color-primary600: #33da99;
+  --delorean-style-color-primary500: #66e3b3;
+  --delorean-style-color-primary400: #99edcc;
+  --delorean-style-color-primary300: #b3f2d9;
+  --delorean-style-color-primary200: #e5faf2;
+  --delorean-style-color-primary100: #f0fcf7;
+}
+
+:root:has(.deposits-theme) {
+  --delorean-style-color-primary1000: #132c42;
+  --delorean-style-color-primary900: #274662;
+  --delorean-style-color-primary800: #0064a5;
+  --delorean-style-color-primary700: #6bcaff;
+  --delorean-style-color-primary600: #89d5ff;
+  --delorean-style-color-primary500: #a6dfff;
+  --delorean-style-color-primary400: #c4eaff;
+  --delorean-style-color-primary300: #dcf2ff;
+  --delorean-style-color-primary200: #e7f6ff;
+  --delorean-style-color-primary100: #f4fbff;
+}
+
+:root:has(.black-theme) {
+  --delorean-style-color-primary1000: #121212;
+  --delorean-style-color-primary900: #2c2c2c;
+  --delorean-style-color-primary800: #058e65;
+  --delorean-style-color-primary700: #00d180;
+  --delorean-style-color-primary600: #33da99;
+  --delorean-style-color-primary500: #66e3b3;
+  --delorean-style-color-primary400: #99edcc;
+  --delorean-style-color-primary300: #b3f2d9;
+  --delorean-style-color-primary200: #e5faf2;
+  --delorean-style-color-primary100: #f0fcf7;
+}
+
+/* Fuente de marca. Si no está instalada localmente cae a Inter, igual que el DS. */
+.dl-font-f37 {
+  font-family: 'F37 Hybrid', Inter, sans-serif;
+}
+
+.dl-h1-sb {
+  font: 600 2rem/2.5rem Inter, sans-serif;
+}
+.dl-h1-r {
+  font: 400 2rem/2.5rem Inter, sans-serif;
+}
+.dl-h2-r,
+.dl-h2-sb {
+  font: 400 1.25rem/1.5rem Inter, sans-serif;
+}
+.dl-title1-r {
+  font: 400 1.125rem/1.5rem Inter, sans-serif;
+}
+.dl-title1 {
+  font: 700 1.125rem/1.5rem Inter, sans-serif;
+}
+.dl-title2 {
+  font: 700 1rem/1.25rem Inter, sans-serif;
+}
+.dl-body-r {
+  font: 400 0.875rem/1.125rem Inter, sans-serif;
+}
+.dl-body-b {
+  font: 700 0.875rem/1.125rem Inter, sans-serif;
+}
+.dl-caption-r {
+  font: 400 0.75rem/1rem Inter, sans-serif;
+}
+.dl-caption-sb {
+  font: 600 0.75rem/1rem Inter, sans-serif;
+}
+.dl-link-body {
+  font: 700 0.875rem/1.125rem Inter, sans-serif;
+}
+.dl-link-caption {
+  font: 600 0.75rem/1rem Inter, sans-serif;
+}
