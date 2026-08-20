@@ -102,6 +102,11 @@ export function addResponse(form, payload) {
     eventName: form.eventName,
     formVersion: form.formVersion,
     owner: form.owner,
+    ai_status: 'skipped',
+    ai_tags: null,
+    ai_problem_text: null,
+    ai_error: null,
+    ai_processed_at: null,
     ...payload,
     sentiment: comment.trim() ? analyzeSentiment(comment) : null,
   }

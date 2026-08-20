@@ -103,6 +103,11 @@ export function seedResponses() {
       pills: ['Soporte'],
       comment: 'Tuve que reintentar dos veces el envío.',
       sentiment: { label: 'negativo', score: -1 },
+      ai_status: 'done',
+      ai_tags: { security: 0, usability: 0.85, product_likeability: 0, other: 0 },
+      ai_problem_text: 'tuvo que reintentar el envio dos veces',
+      ai_error: null,
+      ai_processed_at: daysAgo(2, 10),
     },
     {
       id: 'r6',
@@ -127,6 +132,11 @@ export function seedResponses() {
       pills: ['Soporte', 'Claridad'],
       comment: 'El mensaje de error no me dijo qué falló.',
       sentiment: { label: 'negativo', score: -1 },
+      ai_status: 'done',
+      ai_tags: { security: 0, usability: 0.9, product_likeability: 0, other: 0 },
+      ai_problem_text: 'el mensaje de error no indica la causa',
+      ai_error: null,
+      ai_processed_at: daysAgo(4, 8),
     },
     {
       id: 'r8',

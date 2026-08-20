@@ -4,7 +4,10 @@ MVP interactivo de un sistema parametrizable de calificación de servicio, const
 
 **Arquitectura de producción** (FinClip, DynamoDB, IA sobre comentarios abiertos, Redshift): ver [`docs/ARQUITECTURA-PRODUCCION.md`](docs/ARQUITECTURA-PRODUCCION.md).
 
-## Cómo correrlo
+## Demo local
+
+1. Tener **Node 18+** (`node -v`).
+2. En la raíz:
 
 ```bash
 npm install
@@ -14,7 +17,7 @@ npm run dev
 
 `npm run dev` levanta Vite (http://localhost:5173) y la API (http://localhost:8787) juntos. En dos terminales: `npm run dev:web` y `npm run dev:api`.
 
-Sin DynamoDB, la API usa un store en memoria y lo deja claro en logs. El UI sigue funcionando con `localStorage` (`feedback-bottomsheet-mvp-v2`) si la API no responde.
+Sin DynamoDB, la API usa un store en memoria y lo deja claro en logs. El UI sigue funcionando con `localStorage` (`feedback-bottomsheet-mvp-v3`) si la API no responde.
 
 ### API + DynamoDB (hackathon)
 
@@ -35,14 +38,36 @@ npm run dev
 Rutas: `GET /health`, `GET|POST /v1/forms`, `PUT /v1/forms/:id`, `GET|POST /v1/responses`. Vite proxea `/v1` y `/health` a `:8787`.
 
 **IAM:** least privilege `dynamodb:PutItem`, `GetItem`, `Scan`, `UpdateItem` solo sobre esas dos tablas. No reutilizar roles compartidos de plataforma.
+cp .env.example .env
+```
+
+3. Pegar la key de [Google AI Studio](https://aistudio.google.com/apikey) en `GEMINI_API_KEY`.
+4. `npm install` y `npm run dev`.
+5. Abrir http://localhost:5173. El header debe decir **Gemini listo**.
+
+Guion: Simulador → 1 o 2 estrellas → píldoras → comentario (ej. `me clonaron la tarjeta y nadie me ayuda`) → Enviar → Dashboard.
+
+## Deploy en Vercel
+
+Vercel sirve el `npm run build` (archivos estáticos) **y** la función `api/analyze-csat.js`. El browser nunca llama a Google directo: llama a `/api/analyze-csat` y el servidor usa `GEMINI_API_KEY`.
+
+1. Sube el repo (o `vercel` CLI).
+2. En Vercel → Project → Settings → Environment Variables:
+   - `GEMINI_API_KEY` = la misma key de AI Studio
+   - opcional `GEMINI_MODEL` = `gemini-3.6-flash`
+3. Framework: **Vite**, build `npm run build`, output `dist`.
+4. Redeploy. El header en la URL de Vercel debe decir **Gemini listo**.
+
+No uses variables `VITE_GEMINI_*` en Vercel: irían al JavaScript del cliente.
 
 ## Vistas
 
 1. **Admin / Creador** — catálogo de formularios. Cada formulario define nombre, descripción, evento técnico, producto, frecuencia, preguntas y píldoras. Incluye edición y live mockup.
-2. **Simulador App** — permite seleccionar un formulario y ejecutar su evento respetando la frecuencia configurada. El bottomsheet avanza progresivamente: estrellas → píldoras → texto libre → agradecimiento.
-3. **Dashboard** — filtros por producto y versión de app, promedio, total, distribución por estrellas, actividad de 7 días y comentarios recientes.
+2. **Simulador App** — permite seleccionar un formulario y ejecutar su evento respetando la frecuencia configurada. El bottomsheet avanza: estrellas → píldoras → (si ≤ 2 estrellas) texto libre → agradecimiento.
+3. **Dashboard** — filtros por producto y versión de app, promedio, total, distribución por estrellas, actividad de 7 días, insights de IA (tags + problem_text) y comentarios recientes.
 
 El estado vive en un store reactivo (`src/store.js`). Al arrancar hidrata desde `GET /v1/forms` y `GET /v1/responses` si la API tiene datos; `saveForm` / `addResponse` también persisten en la API (best-effort). `localStorage` (`feedback-bottomsheet-mvp-v2`) queda como caché y fallback.
+El estado vive en un store reactivo (`src/store.js`) y se persiste en `localStorage` bajo la clave `feedback-bottomsheet-mvp-v3`.
 
 ## Design System
 

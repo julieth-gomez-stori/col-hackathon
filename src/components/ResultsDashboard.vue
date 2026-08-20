@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { DlChip, DlIcon, DlSelect, DlTag } from '../delorean'
+import { CSAT_TAG_KEYS } from '../ai/csatAgent'
 import { analyzeSentiment } from '../sentiment'
 import { APP_VERSIONS, PRODUCTS, store } from '../store'
 
@@ -59,6 +60,48 @@ const comments = computed(() =>
       sentiment: item.sentiment || analyzeSentiment(item.comment),
     })),
 )
+
+const analyzed = computed(() => filtered.value.filter((item) => item.ai_status === 'done' && item.ai_tags))
+
+const tagAverages = computed(() =>
+  CSAT_TAG_KEYS.map((key) => {
+    if (!analyzed.value.length) return { key, label: tagLabel(key), value: 0 }
+    const sum = analyzed.value.reduce((acc, item) => acc + Number(item.ai_tags[key] || 0), 0)
+    return { key, label: tagLabel(key), value: Math.round((sum / analyzed.value.length) * 100) }
+  }),
+)
+
+const topProblems = computed(() => {
+  const counts = new Map()
+  for (const item of analyzed.value) {
+    if (!item.ai_problem_text) continue
+    counts.set(item.ai_problem_text, (counts.get(item.ai_problem_text) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([text, count]) => ({ text, count }))
+})
+
+function tagLabel(key) {
+  if (key === 'security') return 'Seguridad'
+  if (key === 'usability') return 'Usabilidad'
+  if (key === 'product_likeability') return 'Producto'
+  if (key === 'other') return 'Otro'
+  return key
+}
+
+function tagBarClass(key) {
+  if (key === 'security') return 'bg-error-dark'
+  if (key === 'usability') return 'bg-primary-700'
+  if (key === 'product_likeability') return 'bg-alert-dark'
+  if (key === 'other') return 'bg-grey-700'
+  return 'bg-grey-500'
+}
+
+function scorePct(tags, key) {
+  return Math.round(Number(tags?.[key] || 0) * 100)
+}
 
 function tagVariant(stars) {
   if (stars >= 4) return 'success'
@@ -129,6 +172,37 @@ function formatDate(iso) {
 
     <div class="grid gap-dl16 lg:grid-cols-2">
       <article class="rounded-dl24 bg-grey-0 p-dl24">
+        <p class="dl-title2 text-grey-1000">Insights CSAT bajo (IA)</p>
+        <p class="mt-dl8 dl-caption-r text-grey-500">
+          Promedio de tags en {{ analyzed.length }} comentario{{ analyzed.length === 1 ? '' : 's' }} analizado{{ analyzed.length === 1 ? '' : 's' }}.
+        </p>
+        <div class="mt-dl16 space-y-dl12">
+          <div v-for="row in tagAverages" :key="row.key">
+            <div class="flex items-center justify-between">
+              <span class="dl-caption-r text-grey-600">{{ row.label }}</span>
+              <span class="dl-caption-sb text-grey-800">{{ row.value }}%</span>
+            </div>
+            <div class="mt-dl4 h-3 overflow-hidden rounded-full bg-grey-100">
+              <div class="h-full rounded-full transition-all" :class="tagBarClass(row.key)" :style="{ width: `${row.value}%` }" />
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rounded-dl24 bg-grey-0 p-dl24">
+        <p class="dl-title2 text-grey-1000">Problemas más citados</p>
+        <ul v-if="topProblems.length" class="mt-dl16 space-y-dl12">
+          <li v-for="row in topProblems" :key="row.text" class="flex items-start justify-between gap-dl12">
+            <span class="dl-body-r text-grey-800">{{ row.text }}</span>
+            <span class="dl-caption-sb text-grey-500">{{ row.count }}</span>
+          </li>
+        </ul>
+        <p v-else class="mt-dl16 dl-body-r text-grey-500">Aún no hay problem_text extraído.</p>
+      </article>
+    </div>
+
+    <div class="grid gap-dl16 lg:grid-cols-2">
+      <article class="rounded-dl24 bg-grey-0 p-dl24">
         <p class="dl-title2 text-grey-1000">Distribución por estrellas</p>
         <div class="mt-dl16 space-y-dl12">
           <div v-for="row in starDist" :key="row.stars" class="flex items-center gap-dl12">
@@ -160,7 +234,7 @@ function formatDate(iso) {
       </div>
 
       <div v-if="comments.length" class="overflow-x-auto">
-        <table class="min-w-[960px] w-full text-left">
+        <table class="min-w-[1180px] w-full text-left">
           <thead class="bg-grey-100">
             <tr class="dl-caption-sb text-grey-600">
               <th class="px-dl16 py-dl12">Fecha</th>
@@ -169,6 +243,7 @@ function formatDate(iso) {
               <th class="px-dl16 py-dl12">Píldoras</th>
               <th class="px-dl16 py-dl12">Comentario</th>
               <th class="px-dl16 py-dl12">Análisis de sentimiento</th>
+              <th class="px-dl16 py-dl12">Análisis IA</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-grey-200">
@@ -195,6 +270,31 @@ function formatDate(iso) {
                   :text="sentimentText(row.sentiment.label)"
                   :variant="sentimentVariant(row.sentiment.label)"
                 />
+              </td>
+              <td class="min-w-[260px] px-dl16 py-dl16">
+                <p v-if="row.ai_problem_text" class="dl-caption-sb text-grey-700">
+                  {{ row.ai_problem_text }}
+                </p>
+                <p v-else-if="row.ai_status === 'error'" class="dl-caption-r text-error-dark">
+                  No se pudo analizar: {{ row.ai_error }}
+                </p>
+                <p v-else class="dl-caption-r text-grey-400">Sin análisis IA</p>
+
+                <div v-if="row.ai_tags" class="mt-dl8 space-y-dl4">
+                  <div v-for="key in CSAT_TAG_KEYS" :key="key" class="flex items-center gap-dl8">
+                    <span class="w-20 dl-caption-r text-grey-500">{{ tagLabel(key) }}</span>
+                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-grey-100">
+                      <div
+                        class="h-full rounded-full"
+                        :class="tagBarClass(key)"
+                        :style="{ width: `${scorePct(row.ai_tags, key)}%` }"
+                      />
+                    </div>
+                    <span class="w-7 text-right dl-caption-r text-grey-500">
+                      {{ scorePct(row.ai_tags, key) }}
+                    </span>
+                  </div>
+                </div>
               </td>
             </tr>
           </tbody>
