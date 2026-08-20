@@ -1,6 +1,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { DlButton, DlChip, DlIllustration, DlSheetGeneric, DlSheetGrade, DlTextArea } from '../delorean'
+import { analyzeCsatComment, shouldAnalyzeComment, shouldCollectOpenText, skippedAiFields } from '../ai/csatAgent'
 import { addResponse } from '../store'
 
 const props = defineProps({
@@ -18,7 +19,14 @@ const form = reactive({
   comment: '',
 })
 
-const stepNumber = computed(() => ({ rating: 1, categories: 2, comment: 3 }[step.value] || 3))
+const submitting = ref(false)
+const totalSteps = computed(() => (shouldCollectOpenText(form.stars) ? 3 : 2))
+const stepNumber = computed(() => ({ rating: 1, categories: 2, comment: 3 }[step.value] || totalSteps.value))
+
+function continueFromCategories() {
+  if (shouldCollectOpenText(form.stars)) step.value = 'comment'
+  else submit()
+}
 
 watch(
   () => props.open,
@@ -28,6 +36,7 @@ watch(
     form.stars = 0
     form.pills = []
     form.comment = ''
+    submitting.value = false
   },
 )
 
@@ -48,13 +57,41 @@ function selectStars(stars) {
   }, 350)
 }
 
-function submit() {
-  if (!props.config || !form.stars) return
+async function submit() {
+  if (!props.config || !form.stars || submitting.value) return
+
+  const comment = shouldCollectOpenText(form.stars) ? form.comment.trim() : ''
+  submitting.value = true
+
+  let aiFields = skippedAiFields()
+  if (shouldAnalyzeComment(form.stars, comment)) {
+    try {
+      const insight = await analyzeCsatComment(comment)
+      aiFields = {
+        ai_status: 'done',
+        ai_tags: insight.tags,
+        ai_problem_text: insight.problem_text,
+        ai_error: null,
+        ai_processed_at: new Date().toISOString(),
+      }
+    } catch (error) {
+      aiFields = {
+        ai_status: 'error',
+        ai_tags: null,
+        ai_problem_text: null,
+        ai_error: error instanceof Error ? error.message : 'No se pudo analizar el comentario.',
+        ai_processed_at: new Date().toISOString(),
+      }
+    }
+  }
+
   addResponse(props.config, {
     stars: form.stars,
     pills: [...form.pills],
-    comment: form.comment.trim(),
+    comment,
+    ...aiFields,
   })
+  submitting.value = false
   step.value = 'thanks'
   window.setTimeout(close, 2000)
 }
@@ -67,7 +104,7 @@ function submit() {
         <p class="dl-caption-sb text-primary-800">{{ config.ratingName }}</p>
         <div class="mt-dl8 flex gap-dl4">
           <span
-            v-for="number in 3"
+            v-for="number in totalSteps"
             :key="number"
             class="h-1 flex-1 rounded-full"
             :class="number <= stepNumber ? 'bg-primary-700' : 'bg-grey-200'"
@@ -105,8 +142,10 @@ function submit() {
           </div>
 
           <div class="mt-dl32 flex gap-dl8">
-            <DlButton variant="secondary" size="large" @click="step = 'rating'">Atrás</DlButton>
-            <DlButton fill size="large" @click="step = 'comment'">Continuar</DlButton>
+            <DlButton variant="secondary" size="large" :disabled="submitting" @click="step = 'rating'">Atrás</DlButton>
+            <DlButton fill size="large" :disabled="submitting" @click="continueFromCategories">
+              {{ shouldCollectOpenText(form.stars) ? 'Continuar' : submitting ? 'Enviando...' : 'Enviar calificación' }}
+            </DlButton>
           </div>
         </div>
 
@@ -124,8 +163,10 @@ function submit() {
           </div>
 
           <div class="mt-dl24 flex gap-dl8">
-            <DlButton variant="secondary" size="large" @click="step = 'categories'">Atrás</DlButton>
-            <DlButton fill size="large" @click="submit">Enviar calificación</DlButton>
+            <DlButton variant="secondary" size="large" :disabled="submitting" @click="step = 'categories'">Atrás</DlButton>
+            <DlButton fill size="large" :disabled="submitting" @click="submit">
+              {{ submitting ? 'Enviando...' : 'Enviar calificación' }}
+            </DlButton>
           </div>
         </div>
       </Transition>

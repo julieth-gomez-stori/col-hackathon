@@ -9,7 +9,7 @@ export const FREQUENCIES = [
 ]
 
 /* v2: catálogo de formularios y nueva lista de productos. */
-const STORAGE_KEY = 'feedback-bottomsheet-mvp-v2'
+const STORAGE_KEY = 'feedback-bottomsheet-mvp-v3'
 
 export const defaultConfig = {
   id: 'form-payment-success',
@@ -100,6 +100,11 @@ function seedResponses() {
       stars: 2,
       pills: ['Soporte'],
       comment: 'Tuve que reintentar dos veces el envío.',
+      ai_status: 'done',
+      ai_tags: { security: 0, usability: 0.85, product_likeability: 0, other: 0 },
+      ai_problem_text: 'tuvo que reintentar el envio dos veces',
+      ai_error: null,
+      ai_processed_at: daysAgo(2, 10),
     },
     {
       id: 'r6',
@@ -122,6 +127,11 @@ function seedResponses() {
       stars: 1,
       pills: ['Soporte', 'Claridad'],
       comment: 'El mensaje de error no me dijo qué falló.',
+      ai_status: 'done',
+      ai_tags: { security: 0, usability: 0.9, product_likeability: 0, other: 0 },
+      ai_problem_text: 'el mensaje de error no indica la causa',
+      ai_error: null,
+      ai_processed_at: daysAgo(4, 8),
     },
     {
       id: 'r8',
@@ -211,13 +221,20 @@ export function saveForm(next) {
 }
 
 export function addResponse(form, payload) {
-  store.responses.unshift({
+  const response = {
     id: `r-${Date.now()}`,
     createdAt: new Date().toISOString(),
     formId: form.id,
     product: form.product,
     appVersion: form.appVersion,
     eventName: form.eventName,
+    ai_status: 'skipped',
+    ai_tags: null,
+    ai_problem_text: null,
+    ai_error: null,
+    ai_processed_at: null,
     ...payload,
-  })
+  }
+  store.responses.unshift(response)
+  return response
 }

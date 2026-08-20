@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { DlChip, DlIcon, DlSelect, DlTag } from '../delorean'
+import { CSAT_TAG_KEYS } from '../ai/csatAgent'
 import { APP_VERSIONS, PRODUCTS, store } from '../store'
 
 const productFilter = ref('all')
@@ -51,6 +52,48 @@ const dayDist = computed(() => {
 })
 
 const comments = computed(() => filtered.value.filter((item) => item.comment).slice(0, 8))
+
+const analyzed = computed(() => filtered.value.filter((item) => item.ai_status === 'done' && item.ai_tags))
+
+const tagAverages = computed(() =>
+  CSAT_TAG_KEYS.map((key) => {
+    if (!analyzed.value.length) return { key, label: tagLabel(key), value: 0 }
+    const sum = analyzed.value.reduce((acc, item) => acc + Number(item.ai_tags[key] || 0), 0)
+    return { key, label: tagLabel(key), value: Math.round((sum / analyzed.value.length) * 100) }
+  }),
+)
+
+const topProblems = computed(() => {
+  const counts = new Map()
+  for (const item of analyzed.value) {
+    if (!item.ai_problem_text) continue
+    counts.set(item.ai_problem_text, (counts.get(item.ai_problem_text) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([text, count]) => ({ text, count }))
+})
+
+function tagLabel(key) {
+  if (key === 'security') return 'Seguridad'
+  if (key === 'usability') return 'Usabilidad'
+  if (key === 'product_likeability') return 'Producto'
+  if (key === 'other') return 'Otro'
+  return key
+}
+
+function tagBarClass(key) {
+  if (key === 'security') return 'bg-error-dark'
+  if (key === 'usability') return 'bg-primary-700'
+  if (key === 'product_likeability') return 'bg-alert-dark'
+  if (key === 'other') return 'bg-grey-700'
+  return 'bg-grey-500'
+}
+
+function scorePct(tags, key) {
+  return Math.round(Number(tags?.[key] || 0) * 100)
+}
 
 function tagVariant(stars) {
   if (stars >= 4) return 'success'
@@ -109,6 +152,37 @@ function formatDate(iso) {
 
     <div class="grid gap-dl16 lg:grid-cols-2">
       <article class="rounded-dl24 bg-grey-0 p-dl24">
+        <p class="dl-title2 text-grey-1000">Insights CSAT bajo (IA)</p>
+        <p class="mt-dl8 dl-caption-r text-grey-500">
+          Promedio de tags en {{ analyzed.length }} comentario{{ analyzed.length === 1 ? '' : 's' }} analizado{{ analyzed.length === 1 ? '' : 's' }}.
+        </p>
+        <div class="mt-dl16 space-y-dl12">
+          <div v-for="row in tagAverages" :key="row.key">
+            <div class="flex items-center justify-between">
+              <span class="dl-caption-r text-grey-600">{{ row.label }}</span>
+              <span class="dl-caption-sb text-grey-800">{{ row.value }}%</span>
+            </div>
+            <div class="mt-dl4 h-3 overflow-hidden rounded-full bg-grey-100">
+              <div class="h-full rounded-full transition-all" :class="tagBarClass(row.key)" :style="{ width: `${row.value}%` }" />
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rounded-dl24 bg-grey-0 p-dl24">
+        <p class="dl-title2 text-grey-1000">Problemas más citados</p>
+        <ul v-if="topProblems.length" class="mt-dl16 space-y-dl12">
+          <li v-for="row in topProblems" :key="row.text" class="flex items-start justify-between gap-dl12">
+            <span class="dl-body-r text-grey-800">{{ row.text }}</span>
+            <span class="dl-caption-sb text-grey-500">{{ row.count }}</span>
+          </li>
+        </ul>
+        <p v-else class="mt-dl16 dl-body-r text-grey-500">Aún no hay problem_text extraído.</p>
+      </article>
+    </div>
+
+    <div class="grid gap-dl16 lg:grid-cols-2">
+      <article class="rounded-dl24 bg-grey-0 p-dl24">
         <p class="dl-title2 text-grey-1000">Distribución por estrellas</p>
         <div class="mt-dl16 space-y-dl12">
           <div v-for="row in starDist" :key="row.stars" class="flex items-center gap-dl12">
@@ -148,6 +222,27 @@ function formatDate(iso) {
           </div>
 
           <p class="mt-dl12 dl-body-r text-grey-800">{{ row.comment }}</p>
+
+          <p v-if="row.ai_problem_text" class="mt-dl8 dl-caption-sb text-grey-700">
+            Insight: {{ row.ai_problem_text }}
+          </p>
+          <p v-else-if="row.ai_status === 'error'" class="mt-dl8 dl-caption-r text-error-dark">
+            No se pudo analizar: {{ row.ai_error }}
+          </p>
+
+          <div v-if="row.ai_tags" class="mt-dl12 space-y-dl8">
+            <div v-for="key in CSAT_TAG_KEYS" :key="key" class="flex items-center gap-dl12">
+              <span class="w-24 dl-caption-r text-grey-500">{{ tagLabel(key) }}</span>
+              <div class="h-2 flex-1 overflow-hidden rounded-full bg-grey-100">
+                <div
+                  class="h-full rounded-full"
+                  :class="tagBarClass(key)"
+                  :style="{ width: `${scorePct(row.ai_tags, key)}%` }"
+                />
+              </div>
+              <span class="w-8 text-right dl-caption-r text-grey-500">{{ scorePct(row.ai_tags, key) }}</span>
+            </div>
+          </div>
 
           <div v-if="row.pills.length" class="mt-dl12 flex flex-wrap gap-dl8">
             <DlChip v-for="pill in row.pills" :key="pill" :text="pill" active />

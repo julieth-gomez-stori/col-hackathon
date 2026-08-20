@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from 'vue'
-import { DlBrand, DlSegmentControl, DlSelect, ThemeProvider } from './delorean'
+import { onMounted, ref } from 'vue'
+import { fetchGeminiStatus } from './ai/csatAgent'
+import { DlBrand, DlSegmentControl, DlSelect, DlTag, ThemeProvider } from './delorean'
 import FormBuilder from './components/FormBuilder.vue'
 import MobileSimulator from './components/MobileSimulator.vue'
 import ResultsDashboard from './components/ResultsDashboard.vue'
@@ -19,6 +20,15 @@ const themes = [
 
 const currentView = ref('admin')
 const theme = ref('credit-theme')
+const geminiReady = ref(null)
+
+onMounted(async () => {
+  try {
+    geminiReady.value = await fetchGeminiStatus()
+  } catch {
+    geminiReady.value = false
+  }
+})
 </script>
 
 <template>
@@ -31,6 +41,12 @@ const theme = ref('credit-theme')
             <div class="border-l border-grey-200 pl-dl16">
               <p class="dl-title2 text-grey-1000">CSAT Bendita entre los hombres</p>
               <p class="dl-caption-r text-grey-600">Design System · MVP parametrizable</p>
+              <div class="mt-dl8">
+                <DlTag
+                  :text="geminiReady ? 'Gemini listo' : geminiReady === null ? 'Comprobando Gemini...' : 'Falta GEMINI_API_KEY'"
+                  :variant="geminiReady ? 'success' : 'alert'"
+                />
+              </div>
             </div>
           </div>
 
